@@ -526,6 +526,11 @@
     else if (sec && sec.type === "articles" && b === "baca" && c) viewArticle(sec, c);
     else viewNotFound();
     if (!samePath || !query.get("item")) { window.scrollTo(0, 0); $main.focus({ preventScroll: true }); }
+    if (!samePath) {
+      $main.classList.remove("page-enter"); void $main.offsetWidth; $main.classList.add("page-enter");
+      if (isHome) U.reveal($heroTop, ".hero > *", { step: 90 });
+      U.reveal($main, ".page-head > *, .hero-below .capsule, .hero-below .composer, .composer-hint, .section-head, .filters, .grid > *, .rec-row > *, .tag-grid > *, .alist > *, .quiz, .auth > *, .reader .prose, .empty");
+    }
     onScroll();
     const itemId = query.get("item");
     if (itemId) { const it = itemById(itemId); if (it) openItem(it); }
@@ -573,6 +578,18 @@
     }
   });
   window.addEventListener("hashchange", route);
+
+  // Contoh pertanyaan yang berganti perlahan di kolom chat (hanya saat kosong & tidak sedang diketik).
+  const SUGGESTIONS = ["Mau belajar apa hari ini?", "Coba: cara menulis prompt yang tajam", "Coba: apa itu AI agent?", "Coba: otomasi pertama dengan n8n", "Coba: memahami cara kerja LLM"];
+  let sIdx = 0;
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setInterval(() => {
+      const t = document.getElementById("ask");
+      if (!t || t.value || document.activeElement === t || document.hidden) return;
+      t.classList.add("ph-out");
+      setTimeout(() => { sIdx = (sIdx + 1) % SUGGESTIONS.length; t.placeholder = SUGGESTIONS[sIdx]; t.classList.remove("ph-out"); }, 400);
+    }, 3800);
+  }
 
   // ---------------- mulai ----------------
   async function boot() {

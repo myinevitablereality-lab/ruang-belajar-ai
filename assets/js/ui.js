@@ -213,15 +213,40 @@
   }
 
   const backgroundHTML = `<div class="bg" aria-hidden="true">
+      <div class="bg-photo"></div>
       <div class="bg-visual"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
       <div class="bg-overlay"></div>
       <canvas class="bg-particles"></canvas>
       <div class="bg-vignette"></div>
+      <div class="bg-grain"></div>
     </div>`;
   function mountBackground() {
     document.body.insertAdjacentHTML("afterbegin", backgroundHTML);
     particles(document.querySelector(".bg-particles"));
   }
 
-  window.ACL_UI = { esc, slugify, heading, md, ytId, ytThumb, readMinutes, LEVEL_LABEL, levelBadge, icons, mark, toast, openModal, closeModal, confirmDialog, mountBackground, safeUrl };
+  // Spotlight: simpan posisi kursor di kartu sebagai --mx / --my (dipakai CSS).
+  if (window.matchMedia("(hover: hover)").matches) {
+    document.addEventListener("pointermove", (e) => {
+      const el = e.target.closest && e.target.closest(".card, .mini, .tag-tile");
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    }, { passive: true });
+  }
+
+  // Munculkan elemen bertahap (stagger). Dimatikan otomatis oleh CSS bila "kurangi gerakan".
+  function reveal(root, selector, { step = 55, max = 14 } = {}) {
+    root.querySelectorAll(selector).forEach((el, i) => {
+      el.style.setProperty("--d", `${Math.min(i, max) * step}ms`);
+      el.classList.remove("reveal");
+      void el.offsetWidth;
+      el.classList.add("reveal");
+      const done = (e) => { if (e.target === el && e.animationName === "rise") { el.classList.remove("reveal"); el.removeEventListener("animationend", done); } };
+      el.addEventListener("animationend", done);
+    });
+  }
+
+  window.ACL_UI = { esc, slugify, heading, md, ytId, ytThumb, readMinutes, LEVEL_LABEL, levelBadge, icons, mark, toast, openModal, closeModal, confirmDialog, mountBackground, safeUrl, reveal };
 })();
