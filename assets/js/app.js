@@ -120,11 +120,13 @@
 
   // ---------------- komponen kartu ----------------
   function resourceCard(it) {
-    return `<a class="card" href="${itemHref(it)}" data-item="${esc(it.id)}">
-        <div class="card-top">${it.category ? `<span class="badge">${esc(it.category)}</span>` : "<span></span>"}${levelBadge(it.level)}</div>
-        <h3>${esc(it.title)}</h3>
-        <p>${esc(it.summary)}</p>
-        <div class="card-foot"><span class="tagline">${it.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</span><span class="go">Detail ${icons.arrowRight}</span></div>
+    return `<a class="card vcard" href="${itemHref(it)}" data-item="${esc(it.id)}">
+        <div class="cover">${U.cover(it, "cards")}${it.category ? `<span class="badge cover-badge">${esc(it.category)}</span>` : ""}</div>
+        <div class="vbody">
+          <h3>${esc(it.title)}</h3>
+          <p>${esc(it.summary)}</p>
+          <div class="card-foot">${levelBadge(it.level)}<span class="go">Detail ${icons.arrowRight}</span></div>
+        </div>
       </a>`;
   }
   function videoCard(it) {
@@ -140,7 +142,8 @@
       </a>`;
   }
   function articleRow(it) {
-    return `<a class="arow" href="${itemHref(it)}">
+    return `<a class="arow has-cover" href="${itemHref(it)}">
+        <span class="cover arow-cover">${U.cover(it, "articles")}</span>
         <h3>${esc(it.title)}</h3>
         <span class="ameta">${levelBadge(it.level)}<span>${U.readMinutes(it.body)} menit baca</span></span>
         <p>${esc(it.summary)}</p>
@@ -149,7 +152,10 @@
   }
   function miniCard(it) {
     const sec = secById(it.section_id);
+    const yt = sec && sec.type === "videos" ? U.ytId(it.url) : "";
+    const art = yt ? `<img src="${U.ytThumb(yt)}" alt="" loading="lazy" decoding="async">` : U.cover(it, sec ? sec.type : "cards");
     return `<a class="mini" href="${itemHref(it)}" data-item="${esc(it.id)}">
+        <span class="cover mini-cover">${art}</span>
         <span class="mini-top"><span class="kind">${esc(sec ? sec.label : "")}</span>${levelBadge(it.level)}</span>
         <h3>${esc(it.title)}</h3>
         <span class="card-foot" style="padding-top:0;justify-content:flex-start;gap:6px">${itemMeta(it)}</span>
@@ -187,7 +193,8 @@
       return;
     }
     const url = U.safeUrl(it.url);
-    U.openModal(`<div class="modal-body">
+    U.openModal(`<div class="cover modal-cover">${U.cover(it, "cards")}</div>
+      <div class="modal-body">
         <div class="modal-meta">${it.category ? `<span class="badge">${esc(it.category)}</span>` : ""}${levelBadge(it.level)}</div>
         <h2>${esc(it.title)}</h2>
         <p class="modal-lede">${esc(it.summary)}</p>
@@ -324,6 +331,7 @@
           <div class="reader-meta">${levelBadge(it.level)}<span>${U.readMinutes(it.body)} menit baca</span>
             <span class="tagline">${it.tags.map((t) => `<a class="tag" href="#/${sec.slug}/tag/${tagSlug(t)}">${esc(t)}</a>`).join("")}</span></div>
         </header>
+        <div class="cover reader-cover">${U.cover(it, "articles")}</div>
         ${it.summary ? `<p class="page-desc" style="margin:0 0 8px;font-size:18px">${esc(it.summary)}</p>` : ""}
         <div class="prose">${md(it.body)}</div>
         <a class="link" href="#/${sec.slug}${first ? `/tag/${tagSlug(first)}` : ""}">${icons.arrowLeft} Kembali ke ${esc(first || sec.label)}</a>

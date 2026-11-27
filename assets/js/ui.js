@@ -225,6 +225,64 @@
     particles(document.querySelector(".bg-particles"));
   }
 
+  // ---------- sampul abstrak (digambar dengan SVG, unik per materi) ----------
+  const COVER_PALETTES = {
+    violet: ["#1d1650", "#7c6cff", "#d4ccff"],
+    blue: ["#10204f", "#5b8cff", "#c4d6ff"],
+    teal: ["#0b2c3f", "#38bcd2", "#bff2f8"],
+    orchid: ["#2e1245", "#c26bff", "#efd2ff"],
+    rose: ["#3a1630", "#ff8fb8", "#ffd8e6"],
+    gold: ["#2b2012", "#e0b06a", "#f7e4c2"],
+  };
+  const TAG_PALETTE = { prompting: "violet", llm: "blue", "ai-agent": "teal", otomasi: "orchid", konten: "rose" };
+  function hashStr(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  function cover(item, kind = "cards") {
+    const seed = hashStr(item.id || item.title);
+    const r = rng(seed);
+    const tag = slugify((item.tags && item.tags[0]) || item.category || "");
+    const names = Object.keys(COVER_PALETTES);
+    const [deep, mid, light] = COVER_PALETTES[TAG_PALETTE[tag] || names[seed % names.length]];
+    const id = "cv" + seed.toString(36);
+    const W = 400, H = 225;
+    const cx = 120 + r() * 200, cy = 40 + r() * 150;
+    let motif = "";
+    if (kind === "articles") {
+      // garis gelombang yang mengalir
+      for (let i = 0; i < 9; i++) {
+        const y = 30 + i * 22 + r() * 6, a = 10 + r() * 22, f = 0.008 + r() * 0.01, ph = r() * 6;
+        let d = `M0 ${y.toFixed(1)}`;
+        for (let x = 0; x <= W; x += 20) d += ` L${x} ${(y + Math.sin(x * f + ph) * a).toFixed(1)}`;
+        motif += `<path d="${d}" fill="none" stroke="${light}" stroke-opacity="${(0.08 + i * 0.022).toFixed(3)}" stroke-width="1"/>`;
+      }
+    } else {
+      // cincin konsentris + garis orbit
+      for (let i = 1; i <= 6; i++) motif += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(i * 26 + r() * 6).toFixed(1)}" fill="none" stroke="${light}" stroke-opacity="${(0.26 - i * 0.03).toFixed(3)}" stroke-width="${i === 2 ? 1.4 : 0.8}"/>`;
+      const ang = r() * Math.PI * 2, rr = 52 + r() * 10;
+      motif += `<circle cx="${(cx + Math.cos(ang) * rr).toFixed(1)}" cy="${(cy + Math.sin(ang) * rr).toFixed(1)}" r="3.2" fill="${light}" fill-opacity=".9"/>`;
+    }
+    // grid titik di salah satu sudut
+    let dots = "";
+    const gx = r() < 0.5 ? 18 : W - 98, gy = r() < 0.5 ? 18 : H - 62;
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) dots += `<circle cx="${gx + i * 16}" cy="${gy + j * 14}" r="1" fill="${light}" fill-opacity=".28"/>`;
+    const letter = esc((item.title || "?").trim()[0] || "?");
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${deep}"/><stop offset="1" stop-color="#07080f"/></linearGradient>
+        <radialGradient id="${id}g1"><stop offset="0" stop-color="${mid}" stop-opacity=".75"/><stop offset="1" stop-color="${mid}" stop-opacity="0"/></radialGradient>
+        <radialGradient id="${id}g2"><stop offset="0" stop-color="${light}" stop-opacity=".35"/><stop offset="1" stop-color="${light}" stop-opacity="0"/></radialGradient>
+        <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#05060c" stop-opacity="0"/><stop offset="1" stop-color="#05060c" stop-opacity=".55"/></linearGradient>
+      </defs>
+      <rect width="${W}" height="${H}" fill="url(#${id}b)"/>
+      <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(150 + r() * 60).toFixed(1)}" fill="url(#${id}g1)"/>
+      <circle cx="${(W - cx).toFixed(1)}" cy="${(H - cy * 0.6).toFixed(1)}" r="${(90 + r() * 50).toFixed(1)}" fill="url(#${id}g2)"/>
+      ${motif}${dots}
+      <text x="${W - 24}" y="${H + 18}" text-anchor="end" font-family="Instrument Serif, Georgia, serif" font-style="italic" font-size="210" fill="${light}" fill-opacity=".14">${letter}</text>
+      <rect width="${W}" height="${H}" fill="url(#${id}s)"/>
+    </svg>`;
+  }
+
   // Spotlight: simpan posisi kursor di kartu sebagai --mx / --my (dipakai CSS).
   if (window.matchMedia("(hover: hover)").matches) {
     document.addEventListener("pointermove", (e) => {
@@ -248,5 +306,5 @@
     });
   }
 
-  window.ACL_UI = { esc, slugify, heading, md, ytId, ytThumb, readMinutes, LEVEL_LABEL, levelBadge, icons, mark, toast, openModal, closeModal, confirmDialog, mountBackground, safeUrl, reveal };
+  window.ACL_UI = { esc, slugify, heading, md, ytId, ytThumb, readMinutes, LEVEL_LABEL, levelBadge, icons, mark, toast, openModal, closeModal, confirmDialog, mountBackground, safeUrl, reveal, cover };
 })();
